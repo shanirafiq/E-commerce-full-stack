@@ -8,8 +8,6 @@ const router = express.Router();
 
 // Verify Email
 router.post("/register", register);
-
-
 router.post("/verify", verifyUser);
 router.post("/resend", resendEmail);
 router.post("/login", login);
