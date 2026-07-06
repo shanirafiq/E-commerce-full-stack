@@ -346,40 +346,45 @@ const changePassword = async (req, res) => {
     try {
         const { password, confirmPassword, email } = req.body;
 
-        const user = await User.findOne({ email })
+        const user = await User.findOne({ email });
+
         if (!user) {
             return res.status(400).json({
                 success: false,
-                message: "user not found"
-            })
+                message: "User not found"
+            });
         }
 
         if (password !== confirmPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Password and confirm password not match"
-            })
+                message: "Password and Confirm Password do not match"
+            });
         }
-        const hashedPassword = await bcrypt.compare(password, user?.password)
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         user.password = hashedPassword;
 
+        // Optional: clear OTP after successful reset
+        user.otp = null;
+        user.otpExpires = null;
+
+        await user.save();
+
         return res.status(200).json({
             success: true,
-            message: "Password Changed successfully"
-        })
+            message: "Password changed successfully"
+        });
 
-
-    }
-    catch (error) {
+    } catch (error) {
         return res.status(500).json({
-            status: false,
-            message: "Internal server error"
-        })
+            success: false,
+            message: error.message
+        });
     }
-
-}
-
+};
 
 
 

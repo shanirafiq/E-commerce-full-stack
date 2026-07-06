@@ -12,9 +12,9 @@ router.post("/verify", verifyUser);
 router.post("/resend", resendEmail);
 router.post("/login", login);
 router.post("/logout",fetchUser, logout);
-router.post("/forget",fetchUser, forgetPassowrd);
-router.post("/verify-otp",fetchUser, verifyOtp);
-router.post("/change-password",fetchUser, changePassword);
+router.post("/forget", forgetPassowrd);
+router.post("/verify-otp", verifyOtp);
+router.post("/change-password", changePassword);
 
 
 module.exports=router
