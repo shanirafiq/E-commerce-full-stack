@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -11,19 +11,23 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import {AppContext} from '../context/Context'
+
 
 const navLinks = [
   { label: "Home", to: "/", icon: Home },
   { label: "Products", to: "/products", icon: ShoppingBag },
 ];
 
-export default function Navbar({ cartCount = 0 }) {
+
+export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const profileRef = useRef(null);
+   const { cartCount } = useContext(AppContext);
 
   // read whatever Login.jsx wrote to localStorage
   const rawUser = (() => {
@@ -33,6 +37,8 @@ export default function Navbar({ cartCount = 0 }) {
       return null;
     }
   })();
+  const rawUsers = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = rawUsers?._id;
   const isLoggedIn = Boolean(localStorage.getItem("token"));
   const initial = (rawUser?.name || rawUser?.email || "U").charAt(0).toUpperCase();
 
@@ -78,11 +84,10 @@ export default function Navbar({ cartCount = 0 }) {
             <Link
               key={to}
               to={to}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${
-                isActive(to)
-                  ? "bg-white/10 text-white"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${isActive(to)
+                ? "bg-white/10 text-white"
+                : "text-white/60 hover:bg-white/5 hover:text-white"
+                }`}
             >
               <Icon className="h-4 w-4" />
               {label}
@@ -130,7 +135,7 @@ export default function Navbar({ cartCount = 0 }) {
                     className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-white/[0.08] p-1.5 shadow-2xl backdrop-blur-2xl"
                   >
                     <Link
-                      to="/profile"
+                      to={`/profile/${userId}`}
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white"
                     >
@@ -186,9 +191,8 @@ export default function Navbar({ cartCount = 0 }) {
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    isActive(to) ? "bg-white/10 text-white" : "text-white/60"
-                  }`}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive(to) ? "bg-white/10 text-white" : "text-white/60"
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   {label}

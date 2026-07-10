@@ -16,8 +16,10 @@ const fetchUser = async (req, res, next) => {
         const token = authHeader.split(" ")[1];
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('decoded',decoded)
 
         const user = await User.findById(decoded.id);
+        console.log('useddfffr',user)
 
         if (!user) {
             return res.status(404).json({

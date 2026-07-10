@@ -14,7 +14,8 @@ import VerifyOtp from "./pages/auth/VerifyOtp";
 import Home from './pages/Home';
 import Products from './pages/Products';
 import Profile from "./pages/Profile";
-
+import ProductDetail from './pages/ProductDetails';
+import Cart from "./pages/Cart";
 
 
 function App() {
@@ -31,8 +32,10 @@ function App() {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:id" element={<Profile />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/product-detail/:id" element={<ProductDetail/>}/>
+        <Route path="/cart" element={<Cart />} />
       </Routes>
       <ToastContainer
         position="top-right"

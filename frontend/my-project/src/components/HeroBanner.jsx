@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Star,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Same font loader used on Login / ResetPassword — Fraunces for display,
 // Inter for body. Safe to call again; it no-ops if the <link> already exists.
@@ -123,17 +124,23 @@ export default function HeroBanner({ onShopNow, onBrowseCategories }) {
           <SignatureDraw />
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <motion.button
+
+
+            <Link to={'/products'}>
+                <motion.button
               type="button"
               onClick={onShopNow}
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
               className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40"
             >
+                
               <ShoppingBag className="h-4 w-4" />
               Shop now
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
             </motion.button>
+            </Link>
+        
 
             <button
               type="button"

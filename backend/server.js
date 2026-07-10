@@ -12,6 +12,8 @@ const connectDB = require("./config/db");
 const app = express();
 const router=require('./routes/authroute');
 const userauth=require('./routes/userroute')
+const productRoute=require('./routes/productRoute');
+const path = require("path");
 
 // Connect Database
 connectDB();
@@ -29,6 +31,7 @@ app.use(compression());
 app.use(morgan("dev"));
 
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,7 +51,11 @@ app.get("/", (req, res) => {
 app.use("/api/auth", router);
 
 app.use("/api/user", userauth);
+app.use("/api/product", productRoute);
+app.use("/uploads", express.static("uploads"));
 
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
