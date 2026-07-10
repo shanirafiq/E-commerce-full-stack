@@ -10,6 +10,12 @@ const productSchema = new mongoose.Schema(
 
     productImg: {
       type: String,
+      default: "",
+    },
+
+    productImgPublicId: {
+      type: String,
+      default: "",
     },
 
     description: {

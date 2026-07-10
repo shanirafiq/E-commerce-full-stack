@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    avatarPublicId: {
+      type: String,
+      default: "",
+    },
+
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -86,6 +91,11 @@ const userSchema = new mongoose.Schema(
     },
 
     isLoggedIn: {
+      type: Boolean,
+      default: false,
+    },
+
+    isBlocked: {
       type: Boolean,
       default: false,
     },

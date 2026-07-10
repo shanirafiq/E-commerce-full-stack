@@ -1,32 +1,50 @@
 const Product = require("../models/productModel");
+const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinaryHelper");
+const { logActivity } = require("../utils/activityLogger");
 
-// ======================
-// Create Product
-// ======================
+const isOwnerOrAdmin = (product, user) =>
+  product.userId.toString() === user._id.toString() || user.role === "admin";
+
 const createProduct = async (req, res) => {
   try {
+    const { productName, description, productPrice, brand, category } = req.body;
+
+    if (!productName || !productPrice) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name and price are required",
+      });
+    }
+
+    let imageData = { url: "", publicId: "" };
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file, "folio/products");
+      imageData = { url: uploaded.url, publicId: uploaded.publicId };
+    }
+
     const product = await Product.create({
-      userId: req.user.id,
+      userId: req.user._id,
+      productImg: imageData.url,
+      productImgPublicId: imageData.publicId,
+      description: description || "",
+      productName,
+      productPrice: Number(productPrice),
+      brand: brand || "",
+      category: category || "Uncategorized",
+    });
 
-      productImg: req.file
-        ? req.file.path
-        : "",
-
-      description: req.body.description,
-
-      productName: req.body.productName,
-
-      productPrice: req.body.productPrice,
-
-      brand: req.body.brand,
-
-      category: req.body.category,
+    await logActivity({
+      userId: req.user._id,
+      action: "product_created",
+      entityType: "product",
+      entityId: product._id,
+      description: `Product "${product.productName}" created`,
     });
 
     res.status(201).json({
       success: true,
       message: "Product created successfully",
-      product,
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
@@ -36,10 +54,6 @@ const createProduct = async (req, res) => {
   }
 };
 
-
-// ======================
-// Get All Products
-// ======================
 const getAllProducts = async (req, res) => {
   try {
     const {
@@ -50,58 +64,51 @@ const getAllProducts = async (req, res) => {
       minPrice,
       maxPrice,
       sort,
+      userId,
     } = req.query;
 
     const filter = {};
 
     if (search) {
-      filter.productName = {
-        $regex: search,
-        $options: "i",
-      };
+      filter.productName = { $regex: search, $options: "i" };
     }
 
     if (category) {
       filter.category = category;
     }
 
+    if (userId) {
+      filter.userId = userId;
+    }
+
     if (minPrice || maxPrice) {
       filter.productPrice = {};
-
-      if (minPrice) {
-        filter.productPrice.$gte = Number(minPrice);
-      }
-
-      if (maxPrice) {
-        filter.productPrice.$lte = Number(maxPrice);
-      }
+      if (minPrice) filter.productPrice.$gte = Number(minPrice);
+      if (maxPrice) filter.productPrice.$lte = Number(maxPrice);
     }
 
     let sortOption = { createdAt: -1 };
-
-    if (sort === "price-asc") {
-      sortOption = { productPrice: 1 };
-    }
-
-    if (sort === "price-desc") {
-      sortOption = { productPrice: -1 };
-    }
+    if (sort === "price-asc") sortOption = { productPrice: 1 };
+    if (sort === "price-desc") sortOption = { productPrice: -1 };
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const products = await Product.find(filter)
-      .populate("userId", "firstName lastName email")
-      .sort(sortOption)
-      .skip(skip)
-      .limit(Number(limit));
-
-    const totalProducts = await Product.countDocuments(filter);
+    const [products, totalProducts] = await Promise.all([
+      Product.find(filter)
+        .populate("userId", "firstName lastName email avatar")
+        .sort(sortOption)
+        .skip(skip)
+        .limit(Number(limit))
+        .lean(),
+      Product.countDocuments(filter),
+    ]);
 
     res.status(200).json({
       success: true,
       totalProducts,
       currentPage: Number(page),
       totalPages: Math.ceil(totalProducts / Number(limit)),
+      data: products,
       products,
     });
   } catch (error) {
@@ -111,15 +118,30 @@ const getAllProducts = async (req, res) => {
     });
   }
 };
-// ======================
-// Get Single Product
-// ======================
+
+const getMyProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "userId",
-      "name email"
-    );
+    const product = await Product.findById(req.params.id)
+      .populate("userId", "firstName lastName email avatar")
+      .lean();
 
     if (!product) {
       return res.status(404).json({
@@ -130,6 +152,7 @@ const getProductById = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      data: product,
       product,
     });
   } catch (error) {
@@ -140,9 +163,6 @@ const getProductById = async (req, res) => {
   }
 };
 
-// ======================
-// Update Product
-// ======================
 const updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -154,39 +174,49 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    // Only owner can update
-    if (product.userId.toString() !== req.user.id) {
+    if (!isOwnerOrAdmin(product, req.user)) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
-    // If a new image is uploaded, update its path
+    const updates = {};
+    const { productName, description, productPrice, brand, category } = req.body;
+
+    if (productName) updates.productName = productName;
+    if (description !== undefined) updates.description = description;
+    if (productPrice) updates.productPrice = Number(productPrice);
+    if (brand !== undefined) updates.brand = brand;
+    if (category) updates.category = category;
+
     if (req.file) {
-      req.body.productImg = `/uploads/${req.file.filename}`;
+      const uploaded = await uploadToCloudinary(req.file, "folio/products");
+      if (product.productImgPublicId) {
+        await deleteFromCloudinary(product.productImgPublicId);
+      }
+      updates.productImg = uploaded.url;
+      updates.productImgPublicId = uploaded.publicId;
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
-      {
-        productName: req.body.productName,
-        description: req.body.description,
-        productPrice: req.body.productPrice,
-        brand: req.body.brand,
-        category: req.body.category,
-        productImg: req.body.productImg || product.productImg,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+      updates,
+      { new: true, runValidators: true }
     );
+
+    await logActivity({
+      userId: req.user._id,
+      action: "product_updated",
+      entityType: "product",
+      entityId: product._id,
+      description: `Product "${updatedProduct.productName}" updated`,
+    });
 
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
-      product: updatedProduct,
+      data: updatedProduct,
     });
   } catch (error) {
     res.status(500).json({
@@ -196,9 +226,6 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// ======================
-// Delete Product
-// ======================
 const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -210,15 +237,26 @@ const deleteProduct = async (req, res) => {
       });
     }
 
-    // Only owner can delete
-    if (product.userId.toString() !== req.user.id) {
+    if (!isOwnerOrAdmin(product, req.user)) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized",
       });
     }
 
+    if (product.productImgPublicId) {
+      await deleteFromCloudinary(product.productImgPublicId);
+    }
+
     await Product.findByIdAndDelete(req.params.id);
+
+    await logActivity({
+      userId: req.user._id,
+      action: "product_deleted",
+      entityType: "product",
+      entityId: product._id,
+      description: `Product "${product.productName}" deleted`,
+    });
 
     res.status(200).json({
       success: true,
@@ -235,6 +273,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getAllProducts,
+  getMyProducts,
   getProductById,
   updateProduct,
   deleteProduct,
