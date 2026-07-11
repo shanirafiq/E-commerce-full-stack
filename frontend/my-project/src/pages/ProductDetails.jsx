@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingBag,
@@ -18,10 +18,9 @@ import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { useParams } from "react-router-dom";
 import axiosInstance from "./api/axios";
-import { useContext } from "react";
-import {AppContext} from '../context/Context'
+import { AppContext } from "../context/Context";
+import { getImageUrl } from "../utils/imageUrl";
 
-// Same font loader used across Home / Products / auth pages.
 function useFonts() {
   useEffect(() => {
     const id = "auth-fonts-vivid";
@@ -35,31 +34,21 @@ function useFonts() {
   }, []);
 }
 
-// ---- Mock data for fallback ----
 const DEFAULT_PRODUCT = {
-  id: 1,
-  name: "Woven Tote — Ochre",
-  category: "Bags",
-  price: 68,
-  compareAt: 84,
-  rating: 5,
-  reviewCount: 128,
-  sku: "FOL-TOTE-OCR",
-  blurb: "Handloomed cotton, lined interior",
-  description:
-    "Handwoven by a small cooperative using undyed cotton and a single natural pigment bath, this tote is built to carry everything from groceries to gallery openings. The lined interior keeps loose items in check, and the reinforced straps are stitched to sit comfortably on the shoulder all day.",
+  category: "Uncategorized",
+  rating: 4,
+  reviewCount: 0,
+  description: "No description available.",
   highlights: [
-    "100% handloomed cotton, naturally dyed",
-    "Cotton-canvas lined interior with inner pocket",
-    "Reinforced double-stitched straps",
-    '14"H x 16"W x 5"D — fits a 13" laptop',
+    "Quality materials",
+    "Expert craftsmanship",
+    "Sustainably sourced",
+    "Ships within 2-3 business days",
   ],
   colors: [
-    { name: "Ochre", swatch: "from-amber-400 to-amber-600" },
-    { name: "Clay", swatch: "from-orange-400 to-rose-600" },
-    { name: "Ink", swatch: "from-indigo-400 to-indigo-700" },
+    { name: "Default", swatch: "from-amber-400 to-amber-600" },
   ],
-  sizes: ["Standard", "Oversized"],
+  sizes: ["Standard"],
 };
 
 const RELATED = [
@@ -75,20 +64,10 @@ const features = [
   { icon: RotateCcw, label: "Easy 30-day returns" },
 ];
 
-
-
 function GalleryPanel({ product, activeIndex, setActiveIndex }) {
-
-  console.log('product',product?.productImg)
-
-
-  const imageUrl = product?.productImg
-    ? `http://localhost:5000/${product.productImg.replace(/\\/g, "/")}`
-    : "";
-
-  console.log(imageUrl + 'imageUrl');
-
+  const imgSrc = getImageUrl(product?.productImg);
   const panels = 4;
+
   return (
     <div>
       <div className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/30 via-violet-500/20 to-pink-500/30 sm:h-[480px]">
@@ -100,9 +79,9 @@ function GalleryPanel({ product, activeIndex, setActiveIndex }) {
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            {product?.productImg ? (
+            {imgSrc ? (
               <img
-                src={imageUrl}
+                src={imgSrc}
                 alt={product.productName}
                 className="h-full w-full object-cover"
               />
@@ -143,9 +122,9 @@ function GalleryPanel({ product, activeIndex, setActiveIndex }) {
               (activeIndex === i ? "border-white/40" : "border-white/10 hover:border-white/25")
             }
           >
-            {product?.productImg ? (
+            {imgSrc ? (
               <img
-                src={imageUrl}
+                src={imgSrc}
                 alt={product.productName}
                 className="h-full w-full rounded-2xl object-cover"
               />
@@ -209,20 +188,15 @@ export default function ProductDetail() {
   const { addToCart } = useContext(AppContext);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const getProduct = async () => {
       try {
         setLoading(true);
-        const res = await axiosInstance.get(`/product/detail-product/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await axiosInstance.get(`/product/detail-product/${id}`);
         if (res.data.success) {
-          setProduct(res.data.product);
+          setProduct(res.data.data);
         }
       } catch (err) {
-        console.log(err);
+        console.error("Failed to load product:", err);
       } finally {
         setLoading(false);
       }
@@ -231,19 +205,17 @@ export default function ProductDetail() {
     getProduct();
   }, [id]);
 
-  // Calculate discount if compareAt exists
   const discountPct = product?.compareAt
-    ? Math.round((1 - product.price / product.compareAt) * 100)
+    ? Math.round((1 - product.productPrice / product.compareAt) * 100)
     : 0;
 
-function handleAddToCart() {
-  if (!product) return;
-  addToCart(product, qty, { color, size });
-  setAdded(true);
-  setTimeout(() => setAdded(false), 1800);
-}
+  function handleAddToCart() {
+    if (!product) return;
+    addToCart(product, qty, { color, size });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  }
 
-  // Loading state
   if (loading) {
     return (
       <>
@@ -260,7 +232,6 @@ function handleAddToCart() {
     );
   }
 
-  // If no product found
   if (!product) {
     return (
       <>
@@ -282,7 +253,6 @@ function handleAddToCart() {
       <Navbar />
       <section className="min-h-screen w-full bg-gradient-to-br from-indigo-900 via-violet-900 to-blue-900 px-6 py-14 sm:px-10 lg:px-16">
         <div className="mx-auto max-w-6xl">
-          {/* breadcrumb */}
           <div className="flex items-center gap-2 text-xs text-white/40">
             <span className="hover:text-white/60">Shop</span>
             <span>/</span>
@@ -291,9 +261,7 @@ function handleAddToCart() {
             <span className="text-white/60">{product.productName}</span>
           </div>
 
-          {/* main layout */}
           <div className="mt-6 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_0.85fr]">
-            {/* gallery */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
               <GalleryPanel
                 product={product}
@@ -302,7 +270,6 @@ function handleAddToCart() {
               />
             </motion.div>
 
-            {/* info panel */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -338,7 +305,6 @@ function handleAddToCart() {
                 </div>
               </div>
 
-              {/* rating - using fallback since API doesn't have rating */}
               <div className="mt-3 flex items-center gap-2">
                 <div className="flex items-center gap-0.5 text-amber-400">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -346,11 +312,10 @@ function handleAddToCart() {
                   ))}
                 </div>
                 <span className="text-xs text-white/50">
-                  {DEFAULT_PRODUCT.rating.toFixed(1)} · {DEFAULT_PRODUCT.reviewCount} reviews
+                  {DEFAULT_PRODUCT.rating.toFixed(1)}
                 </span>
               </div>
 
-              {/* price - using productPrice from API */}
               <div className="mt-5 flex items-center gap-3">
                 <span className="text-3xl font-semibold text-white">${product.productPrice?.toFixed(2) || product.productPrice}</span>
                 {product.compareAt && (
@@ -363,13 +328,11 @@ function handleAddToCart() {
                 )}
               </div>
 
-              {/* brand */}
               <p className="mt-4 text-sm leading-relaxed text-white/50">{product.brand || "Artisan Collection"}</p>
 
-              {/* color - using dynamic colors or default */}
               <div className="mt-7">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">
-                  Color — <span className="text-white/60">{color}</span>
+                  Color â€” <span className="text-white/60">{color}</span>
                 </p>
                 <div className="flex gap-2.5">
                   {DEFAULT_PRODUCT.colors.map((c) => (
@@ -389,7 +352,6 @@ function handleAddToCart() {
                 </div>
               </div>
 
-              {/* size - using dynamic sizes or default */}
               <div className="mt-6">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/40">Size</p>
                 <div className="flex flex-wrap gap-2">
@@ -411,7 +373,6 @@ function handleAddToCart() {
                 </div>
               </div>
 
-              {/* quantity + add to cart */}
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
                   <button
@@ -466,9 +427,8 @@ function handleAddToCart() {
                 </motion.button>
               </div>
 
-              <p className="mt-3 text-[11px] text-white/35">SKU: {product._id?.slice(-8) || DEFAULT_PRODUCT.sku}</p>
+              <p className="mt-3 text-[11px] text-white/35">SKU: {product._id?.slice(-8) || "N/A"}</p>
 
-              {/* feature strip */}
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-6">
                 {features.map(({ icon: Icon, label }) => (
                   <div key={label} className="flex items-center gap-2 text-xs text-white/50">
@@ -480,7 +440,6 @@ function handleAddToCart() {
             </motion.div>
           </div>
 
-          {/* tabs: description / highlights */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -534,7 +493,7 @@ function handleAddToCart() {
                     transition={{ duration: 0.2 }}
                     className="grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2"
                   >
-                    {DEFAULT_PRODUCT.highlights.map((h) => (
+                    {(product.highlights || DEFAULT_PRODUCT.highlights).map((h) => (
                       <li key={h} className="flex items-start gap-2 text-sm text-white/55">
                         <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
                         {h}
@@ -546,7 +505,6 @@ function handleAddToCart() {
             </div>
           </motion.div>
 
-          {/* related products */}
           <div className="mt-16">
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: "Fraunces, serif" }}>
               You might also like

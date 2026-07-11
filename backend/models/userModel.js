@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+﻿const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -8,23 +7,19 @@ const userSchema = new mongoose.Schema(
       required: [true, "First name is required"],
       trim: true,
     },
-
     lastName: {
       type: String,
       required: [true, "Last name is required"],
       trim: true,
     },
-
     avatar: {
       type: String,
       default: "",
     },
-
     avatarPublicId: {
       type: String,
       default: "",
     },
-
     email: {
       type: String,
       required: [true, "Email is required"],
@@ -32,40 +27,30 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-
     password: {
       type: String,
     },
-
     phoneNumber: {
       type: String,
-
       trim: true,
     },
-
     address: {
       type: String,
-
       trim: true,
     },
-
     city: {
       type: String,
       trim: true,
     },
-
     postalCode: {
       type: String,
       trim: true,
     },
-
     role: {
       type: String,
       enum: ["admin", "user"],
       default: "user",
     },
-
-    // Authentication Fields
     isVerified: {
       type: Boolean,
       default: false,
@@ -77,24 +62,19 @@ const userSchema = new mongoose.Schema(
     token: {
       type: String,
       default: null,
-
     },
-
     otpExpires: {
       type: Date,
       default: null,
     },
-
     otpVerified: {
       type: Boolean,
       default: false,
     },
-
     isLoggedIn: {
       type: Boolean,
       default: false,
     },
-
     isBlocked: {
       type: Boolean,
       default: false,
@@ -104,10 +84,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-
-
-
 
 const User = mongoose.model("User", userSchema);
 

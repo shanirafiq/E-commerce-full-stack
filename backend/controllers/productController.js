@@ -1,5 +1,5 @@
-const Product = require("../models/productModel");
-const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinaryHelper");
+﻿const Product = require("../models/productModel");
+const { saveLocalFile, deleteLocalFile } = require("../utils/cloudinaryHelper");
 const { logActivity } = require("../utils/activityLogger");
 
 const isOwnerOrAdmin = (product, user) =>
@@ -18,7 +18,7 @@ const createProduct = async (req, res) => {
 
     let imageData = { url: "", publicId: "" };
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "folio/products");
+      const uploaded = saveLocalFile(req.file);
       imageData = { url: uploaded.url, publicId: uploaded.publicId };
     }
 
@@ -74,7 +74,7 @@ const getAllProducts = async (req, res) => {
     }
 
     if (category) {
-      filter.category = category;
+      filter.category = { $regex: new RegExp(`^${category}$`, "i") };
     }
 
     if (userId) {
@@ -109,7 +109,6 @@ const getAllProducts = async (req, res) => {
       currentPage: Number(page),
       totalPages: Math.ceil(totalProducts / Number(limit)),
       data: products,
-      products,
     });
   } catch (error) {
     res.status(500).json({
@@ -153,7 +152,6 @@ const getProductById = async (req, res) => {
     res.status(200).json({
       success: true,
       data: product,
-      product,
     });
   } catch (error) {
     res.status(500).json({
@@ -191,9 +189,9 @@ const updateProduct = async (req, res) => {
     if (category) updates.category = category;
 
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "folio/products");
+      const uploaded = saveLocalFile(req.file);
       if (product.productImgPublicId) {
-        await deleteFromCloudinary(product.productImgPublicId);
+        deleteLocalFile(product.productImgPublicId);
       }
       updates.productImg = uploaded.url;
       updates.productImgPublicId = uploaded.publicId;
@@ -245,7 +243,7 @@ const deleteProduct = async (req, res) => {
     }
 
     if (product.productImgPublicId) {
-      await deleteFromCloudinary(product.productImgPublicId);
+      deleteLocalFile(product.productImgPublicId);
     }
 
     await Product.findByIdAndDelete(req.params.id);

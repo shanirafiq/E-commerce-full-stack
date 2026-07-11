@@ -20,6 +20,8 @@ const activitySchema = new mongoose.Schema(
         "user_blocked",
         "user_unblocked",
         "user_deleted",
+        "user_promoted",
+        "user_demoted",
         "category_created",
         "category_updated",
         "category_deleted",

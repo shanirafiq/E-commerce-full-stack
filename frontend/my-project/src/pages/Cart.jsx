@@ -1,10 +1,11 @@
-import React, { useContext } from "react";
+﻿import React, { useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import {AppContext} from '../context/Context'
+import { AppContext } from "../context/Context";
+import { getImageUrl } from "../utils/imageUrl";
 
 export default function Cart() {
   const { cart, removeFromCart, updateQty, cartTotal, clearCart } = useContext(AppContext);
@@ -52,13 +53,10 @@ export default function Cart() {
             </div>
           ) : (
             <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-              {/* cart items */}
               <div className="flex flex-col gap-4">
                 <AnimatePresence>
                   {cart.map((item) => {
-                    const imageUrl = item.image
-                      ? `http://localhost:5000/${item.image.replace(/\\/g, "/")}`
-                      : "";
+                    const imgSrc = getImageUrl(item.image);
                     return (
                       <motion.div
                         key={`${item.productId}-${item.color}-${item.size}`}
@@ -70,8 +68,8 @@ export default function Cart() {
                         className="flex gap-4 rounded-3xl border border-white/10 bg-white/[0.07] p-4 shadow-xl backdrop-blur-2xl sm:p-5"
                       >
                         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/30 via-violet-500/20 to-pink-500/30">
-                          {imageUrl ? (
-                            <img src={imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                          {imgSrc ? (
+                            <img src={imgSrc} alt={item.name} className="h-full w-full object-cover" />
                           ) : (
                             <ShoppingBag className="h-8 w-8 text-white/60" strokeWidth={1.25} />
                           )}
@@ -87,7 +85,7 @@ export default function Cart() {
                                 {item.name}
                               </h3>
                               <p className="mt-0.5 text-[11px] text-white/40">
-                                {item.color} · {item.size}
+                                {item.color} Â· {item.size}
                               </p>
                             </div>
                             <button
@@ -143,7 +141,6 @@ export default function Cart() {
                 </button>
               </div>
 
-              {/* summary */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}

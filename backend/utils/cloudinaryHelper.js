@@ -1,38 +1,44 @@
-const cloudinary = require("../cloudinary");
-const { Readable } = require("stream");
+const fs = require("fs");
+const path = require("path");
 
-const uploadToCloudinary = (file, folder = "folio") => {
-  return new Promise((resolve, reject) => {
-    if (!file || !file.buffer) {
-      return reject(new Error("No file provided"));
-    }
+const uploadsDir = path.join(__dirname, "..", "uploads");
 
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: "image",
-        transformation: [{ quality: "auto", fetch_format: "auto" }],
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve({
-          url: result.secure_url,
-          publicId: result.public_id,
-        });
-      }
-    );
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-    Readable.from(file.buffer).pipe(uploadStream);
-  });
+/**
+ * Get the relative URL path for a locally saved file.
+ * @param {Object} file - Multer file object (with .filename)
+ * @returns {{ url: string, publicId: string }}
+ */
+const saveLocalFile = (file) => {
+  if (!file || !file.filename) {
+    throw new Error("No file provided for upload");
+  }
+
+  // Store as relative path: "uploads/filename.ext"
+  const url = `uploads/${file.filename}`;
+
+  return {
+    url,
+    publicId: file.filename, // filename acts as the ID for local files
+  };
 };
 
-const deleteFromCloudinary = async (publicId) => {
+/**
+ * Delete a locally stored file by its filename.
+ * @param {string} publicId - The filename to delete
+ */
+const deleteLocalFile = (publicId) => {
   if (!publicId) return;
-  try {
-    await cloudinary.uploader.destroy(publicId);
-  } catch (error) {
-    console.error("Cloudinary delete error:", error.message);
+
+  const filePath = path.join(uploadsDir, publicId);
+
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
   }
 };
 
-module.exports = { uploadToCloudinary, deleteFromCloudinary };
+module.exports = { saveLocalFile, deleteLocalFile };

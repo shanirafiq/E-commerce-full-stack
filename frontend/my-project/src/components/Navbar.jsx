@@ -10,15 +10,16 @@ import {
   Menu,
   X,
   ChevronDown,
+  Shield,
 } from "lucide-react";
-import {AppContext} from '../context/Context'
-
+import { AppContext } from "../context/Context";
+import { useAuth } from "../context/AuthContext";
+import { getImageUrl } from "../utils/imageUrl";
 
 const navLinks = [
   { label: "Home", to: "/", icon: Home },
   { label: "Products", to: "/products", icon: ShoppingBag },
 ];
-
 
 export default function Navbar() {
   const location = useLocation();
@@ -27,20 +28,12 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const profileRef = useRef(null);
-   const { cartCount } = useContext(AppContext);
+  const { cartCount } = useContext(AppContext);
+  const { user, isAdmin, isAuthenticated } = useAuth();
 
-  // read whatever Login.jsx wrote to localStorage
-  const rawUser = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  })();
-  const rawUsers = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = rawUsers?._id;
-  const isLoggedIn = Boolean(localStorage.getItem("token"));
-  const initial = (rawUser?.name || rawUser?.email || "U").charAt(0).toUpperCase();
+  const userId = user?._id;
+  const avatarUrl = getImageUrl(user?.avatar);
+  const initial = (user?.firstName || user?.email || "U").charAt(0).toUpperCase();
 
   useEffect(() => {
     const onClickOutside = (e) => {
@@ -65,7 +58,6 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-gradient-to-br from-indigo-900/90 via-violet-900/90 to-blue-900/90 backdrop-blur-2xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-10 lg:px-16">
-        {/* logo */}
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-pink-500 text-sm font-bold text-white shadow-lg">
             F
@@ -78,31 +70,43 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* desktop nav links */}
         <nav className="hidden items-center gap-1 sm:flex">
           {navLinks.map(({ label, to, icon: Icon }) => (
             <Link
               key={to}
               to={to}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${isActive(to)
-                ? "bg-white/10 text-white"
-                : "text-white/60 hover:bg-white/5 hover:text-white"
-                }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                isActive(to)
+                  ? "bg-white/10 text-white"
+                  : "text-white/60 hover:bg-white/5 hover:text-white"
+              }`}
             >
               <Icon className="h-4 w-4" />
               {label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                location.pathname.startsWith("/admin")
+                  ? "bg-amber-400/20 text-amber-300"
+                  : "text-amber-300/70 hover:bg-amber-400/10 hover:text-amber-300"
+              }`}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
 
-        {/* right side: cart + profile */}
         <div className="hidden items-center gap-3 sm:flex">
           <Link
             to="/cart"
             className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-colors duration-150 hover:border-white/20 hover:text-white"
             aria-label="Cart"
           >
-            <ShoppingCart className="h-4.5 w-4.5" />
+            <ShoppingCart className="h-4 w-4" />
             {cartCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-pink-500 px-1 text-[10px] font-semibold text-white">
                 {cartCount > 9 ? "9+" : cartCount}
@@ -110,16 +114,20 @@ export default function Navbar() {
             )}
           </Link>
 
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <div className="relative" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => setProfileOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 text-white/80 transition-colors duration-150 hover:border-white/20 hover:text-white"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-pink-500 text-[11px] font-semibold text-white">
-                  {initial}
-                </span>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-pink-500 text-[11px] font-semibold text-white">
+                    {initial}
+                  </span>
+                )}
                 <ChevronDown
                   className={`h-3.5 w-3.5 transition-transform duration-150 ${profileOpen ? "rotate-180" : ""}`}
                 />
@@ -135,13 +143,23 @@ export default function Navbar() {
                     className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-white/[0.08] p-1.5 shadow-2xl backdrop-blur-2xl"
                   >
                     <Link
-                      to={`/profile/${userId}`}
+                      to={userId ? `/profile/${userId}` : "/profile"}
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white"
                     >
                       <User className="h-4 w-4" />
                       Profile
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-amber-300/80 transition-colors duration-150 hover:bg-amber-400/10 hover:text-amber-300"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -164,7 +182,6 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* mobile toggle */}
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
@@ -175,7 +192,6 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -191,13 +207,28 @@ export default function Navbar() {
                   key={to}
                   to={to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive(to) ? "bg-white/10 text-white" : "text-white/60"
-                    }`}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    isActive(to) ? "bg-white/10 text-white" : "text-white/60"
+                  }`}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    location.pathname.startsWith("/admin")
+                      ? "bg-amber-400/20 text-amber-300"
+                      : "text-amber-300/70"
+                  }`}
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              )}
               <Link
                 to="/cart"
                 onClick={() => setMobileOpen(false)}
@@ -207,10 +238,10 @@ export default function Navbar() {
                 Cart {cartCount > 0 && `(${cartCount})`}
               </Link>
 
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
                   <Link
-                    to="/profile"
+                    to={userId ? `/profile/${userId}` : "/profile"}
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-white/60"
                   >

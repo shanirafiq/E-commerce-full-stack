@@ -1,5 +1,5 @@
 const Category = require("../models/categoryModel");
-const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinaryHelper");
+const { saveLocalFile, deleteLocalFile } = require("../utils/cloudinaryHelper");
 const { logActivity } = require("../utils/activityLogger");
 
 const createCategory = async (req, res) => {
@@ -15,7 +15,7 @@ const createCategory = async (req, res) => {
 
     let imageData = { url: "", publicId: "" };
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "folio/categories");
+      const uploaded = saveLocalFile(req.file);
       imageData = { url: uploaded.url, publicId: uploaded.publicId };
     }
 
@@ -122,9 +122,9 @@ const updateCategory = async (req, res) => {
     if (isActive !== undefined) category.isActive = isActive;
 
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "folio/categories");
+      const uploaded = saveLocalFile(req.file);
       if (category.imagePublicId) {
-        await deleteFromCloudinary(category.imagePublicId);
+        deleteLocalFile(category.imagePublicId);
       }
       category.image = uploaded.url;
       category.imagePublicId = uploaded.publicId;
@@ -165,7 +165,7 @@ const deleteCategory = async (req, res) => {
     }
 
     if (category.imagePublicId) {
-      await deleteFromCloudinary(category.imagePublicId);
+      deleteLocalFile(category.imagePublicId);
     }
 
     await Category.findByIdAndDelete(req.params.id);

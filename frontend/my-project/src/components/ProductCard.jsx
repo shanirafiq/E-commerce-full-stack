@@ -1,8 +1,9 @@
-import { useContext } from "react";
+﻿import { useContext } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import {AppContext} from '../context/Context'
+import { AppContext } from "../context/Context";
+import { getImageUrl } from "../utils/imageUrl";
 
 export function ProductCard({ product, index }) {
   const { addToCart } = useContext(AppContext);
@@ -12,6 +13,8 @@ export function ProductCard({ product, index }) {
     e.stopPropagation();
     addToCart(product, 1);
   };
+
+  const imgSrc = getImageUrl(product?.productImg);
 
   return (
     <motion.div
@@ -35,9 +38,9 @@ export function ProductCard({ product, index }) {
 
       <Link to={`/product-detail/${product?._id}`}>
         <div className="mt-4 h-36 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/30 via-violet-500/20 to-pink-500/30">
-          {product?.productImg ? (
+          {imgSrc ? (
             <img
-              src={`http://localhost:5000/${product.productImg.replace(/\\/g, "/")}`}
+              src={imgSrc}
               alt={product.productName}
               className="h-full w-full object-cover"
             />

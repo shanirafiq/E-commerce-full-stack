@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const Product = require("../models/productModel");
 const Review = require("../models/reviewModel");
-const { uploadToCloudinary, deleteFromCloudinary } = require("../utils/cloudinaryHelper");
+const { saveLocalFile, deleteLocalFile } = require("../utils/cloudinaryHelper");
 const { logActivity } = require("../utils/activityLogger");
 
 const sanitizeUser = (user) => {
@@ -97,9 +97,9 @@ const updatedUser = async (req, res) => {
     }
 
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file, "folio/avatars");
+      const uploaded = saveLocalFile(req.file);
       if (user.avatarPublicId) {
-        await deleteFromCloudinary(user.avatarPublicId);
+        deleteLocalFile(user.avatarPublicId);
       }
       user.avatar = uploaded.url;
       user.avatarPublicId = uploaded.publicId;
@@ -152,13 +152,13 @@ const deleteUser = async (req, res) => {
     }
 
     if (user.avatarPublicId) {
-      await deleteFromCloudinary(user.avatarPublicId);
+      deleteLocalFile(user.avatarPublicId);
     }
 
     const products = await Product.find({ userId: id });
     for (const product of products) {
       if (product.productImgPublicId) {
-        await deleteFromCloudinary(product.productImgPublicId);
+        deleteLocalFile(product.productImgPublicId);
       }
     }
     await Product.deleteMany({ userId: id });
@@ -249,6 +249,66 @@ const getUserStats = async (req, res) => {
   }
 };
 
+const changeUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // Only admins can change roles
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins can change user roles",
+      });
+    }
+
+    // Prevent admin from removing their own admin role
+    if (req.user._id.toString() === id && role !== "admin") {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot remove your own admin role",
+      });
+    }
+
+    if (!["admin", "user"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Must be 'admin' or 'user'",
+      });
+    }
+
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    targetUser.role = role;
+    await targetUser.save();
+
+    await logActivity({
+      userId: req.user._id,
+      action: role === "admin" ? "user_promoted" : "user_demoted",
+      entityType: "user",
+      entityId: id,
+      description: `Admin changed ${targetUser.firstName} ${targetUser.lastName}'s role to ${role}`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `User role changed to ${role} successfully`,
+      data: sanitizeUser(targetUser),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   deleteUser,
@@ -256,4 +316,5 @@ module.exports = {
   getUserById,
   toggleBlockUser,
   getUserStats,
+  changeUserRole,
 };
