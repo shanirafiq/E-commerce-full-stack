@@ -1,43 +1,50 @@
-const fs = require("fs");
-const path = require("path");
-
-const uploadsDir = path.join(__dirname, "..", "uploads");
-
-// Ensure uploads directory exists
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+﻿const cloudinary = require("../cloudinary");
 
 /**
- * Get the relative URL path for a locally saved file.
- * @param {Object} file - Multer file object (with .filename)
- * @returns {{ url: string, publicId: string }}
+ * Upload a file buffer to Cloudinary.
+ * @param {Object} file - Multer file object (with .buffer from memoryStorage)
+ * @param {string} folder - Cloudinary folder path (default: "folio")
+ * @returns {Promise<{ url: string, publicId: string }>}
  */
-const saveLocalFile = (file) => {
-  if (!file || !file.filename) {
-    throw new Error("No file provided for upload");
-  }
+const saveLocalFile = (file, folder = "folio") => {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.buffer) {
+      return reject(new Error("No file provided for upload"));
+    }
 
-  // Store as relative path: "uploads/filename.ext"
-  const url = `uploads/${file.filename}`;
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "gif", "avif", "jfif"],
+      },
+      (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          return reject(new Error("Failed to upload image to Cloudinary"));
+        }
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
+      }
+    );
 
-  return {
-    url,
-    publicId: file.filename, // filename acts as the ID for local files
-  };
+    stream.end(file.buffer);
+  });
 };
 
 /**
- * Delete a locally stored file by its filename.
- * @param {string} publicId - The filename to delete
+ * Delete an image from Cloudinary by its public_id.
+ * @param {string} publicId - Cloudinary public_id
  */
-const deleteLocalFile = (publicId) => {
+const deleteLocalFile = async (publicId) => {
   if (!publicId) return;
 
-  const filePath = path.join(uploadsDir, publicId);
-
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (error) {
+    console.error("Cloudinary delete error:", error.message);
   }
 };
 

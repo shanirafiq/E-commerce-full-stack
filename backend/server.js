@@ -19,6 +19,7 @@ const productRoute = require("./routes/productRoute");
 const reviewRoute = require("./routes/reviewRoute");
 const categoryRoute = require("./routes/categoryRoute");
 const analyticsRoute = require("./routes/analyticsRoute");
+const orderRoute = require("./routes/orderRoute");
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use("/api/product", productRoute);
 app.use("/api/review", reviewRoute);
 app.use("/api/category", categoryRoute);
 app.use("/api/analytics", analyticsRoute);
+app.use("/api/orders", orderRoute);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Edit3, Trash2, X, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Edit3, Trash2, X, Package, ChevronLeft, ChevronRight, Upload, Image as ImageIcon } from "lucide-react";
 import axiosInstance from "../api/axios";
 import { toast } from "react-toastify";
 import { getImageUrl } from "../../utils/imageUrl";
@@ -15,6 +15,7 @@ export default function AdminProducts() {
   const [editProduct, setEditProduct] = useState(null);
   const [form, setForm] = useState({ productName: "", productPrice: "", description: "", brand: "", category: "" });
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const fetchProducts = async () => {
@@ -36,6 +37,7 @@ export default function AdminProducts() {
     setEditProduct(null);
     setForm({ productName: "", productPrice: "", description: "", brand: "", category: "" });
     setImageFile(null);
+    setImagePreview(null);
     setShowModal(true);
   };
 
@@ -49,7 +51,22 @@ export default function AdminProducts() {
       category: p.category || "",
     });
     setImageFile(null);
+    // Show existing image as preview
+    setImagePreview(p.productImg ? getImageUrl(p.productImg) : null);
     setShowModal(true);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSave = async () => {
@@ -61,14 +78,18 @@ export default function AdminProducts() {
       fd.append("description", form.description);
       fd.append("brand", form.brand);
       fd.append("category", form.category);
-      if (imageFile) fd.append("productImg", imageFile);
+      
+      // Only append image if a new one is selected
+      if (imageFile) {
+        fd.append("productImg", imageFile);
+      }
 
       if (editProduct) {
         await axiosInstance.put(`/product/update-product/${editProduct._id}`, fd);
-        toast.success("Product updated");
+        toast.success("Product updated successfully");
       } else {
         await axiosInstance.post("/product/create", fd);
-        toast.success("Product created");
+        toast.success("Product created successfully");
       }
       setShowModal(false);
       fetchProducts();
@@ -83,7 +104,7 @@ export default function AdminProducts() {
     if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       await axiosInstance.delete(`/product/del-product/${id}`);
-      toast.success("Product deleted");
+      toast.success("Product deleted successfully");
       fetchProducts();
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
@@ -212,6 +233,51 @@ export default function AdminProducts() {
               </div>
 
               <div className="space-y-3">
+                {/* Image Upload Section */}
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-white/70">
+                    Product Image
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {/* Image Preview */}
+                    {imagePreview && (
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-white/10">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          onClick={() => {
+                            setImagePreview(null);
+                            setImageFile(null);
+                          }}
+                          className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Upload Button */}
+                    <div className="flex-1">
+                      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/20 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:border-indigo-400 hover:bg-white/10">
+                        <Upload className="h-4 w-4" />
+                        <span>{imageFile ? imageFile.name : (editProduct ? "Change Image" : "Upload Image")}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                      {editProduct && !imageFile && !imagePreview && (
+                        <p className="mt-1 text-xs text-white/40">Current image will be preserved if you don't upload a new one</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <input
                   type="text"
                   placeholder="Product Name"
@@ -249,12 +315,6 @@ export default function AdminProducts() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 px-4 text-sm text-white placeholder-white/30 outline-none focus:border-indigo-400"
                   />
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0])}
-                  className="w-full text-xs text-white/50"
-                />
               </div>
 
               <button

@@ -60,13 +60,13 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 sm:px-10 lg:px-16">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-pink-500 text-sm font-bold text-white shadow-lg">
-            F
+           Z
           </div>
           <span
             className="text-lg font-semibold tracking-wide text-white"
             style={{ fontFamily: "Fraunces, serif" }}
           >
-            Folio
+          Zeeshan
           </span>
         </Link>
 

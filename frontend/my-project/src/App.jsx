@@ -14,6 +14,7 @@ import Products from "./pages/Products";
 import Profile from "./pages/Profile";
 import ProductDetail from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 
 /* Admin Pages */
 import AdminLayout from "./components/admin/AdminLayout";
@@ -45,6 +46,7 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/product-detail/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
 
         {/* Admin Protected Routes */}
         <Route element={<AdminRoute />}>

@@ -15,7 +15,7 @@ const createCategory = async (req, res) => {
 
     let imageData = { url: "", publicId: "" };
     if (req.file) {
-      const uploaded = saveLocalFile(req.file);
+      const uploaded = await saveLocalFile(req.file, "folio/categories");
       imageData = { url: uploaded.url, publicId: uploaded.publicId };
     }
 
@@ -122,9 +122,9 @@ const updateCategory = async (req, res) => {
     if (isActive !== undefined) category.isActive = isActive;
 
     if (req.file) {
-      const uploaded = saveLocalFile(req.file);
+      const uploaded = await saveLocalFile(req.file, "folio/categories");
       if (category.imagePublicId) {
-        deleteLocalFile(category.imagePublicId);
+        await deleteLocalFile(category.imagePublicId);
       }
       category.image = uploaded.url;
       category.imagePublicId = uploaded.publicId;
@@ -165,7 +165,7 @@ const deleteCategory = async (req, res) => {
     }
 
     if (category.imagePublicId) {
-      deleteLocalFile(category.imagePublicId);
+      await deleteLocalFile(category.imagePublicId);
     }
 
     await Category.findByIdAndDelete(req.params.id);

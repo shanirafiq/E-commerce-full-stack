@@ -432,7 +432,12 @@ export default function ProfilePage() {
                         <StatusBadge status={order.status} />
                       </div>
                       <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3">
-                        <span className="text-xs text-white/50">Total</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-white/50">Total</span>
+                          <span className="text-xs text-white/40">
+                            {order.paymentMethod === "COD" ? "💵 Cash on Delivery" : "💳 Online Payment"}
+                          </span>
+                        </div>
                         <span className="text-sm font-semibold text-white">
                           ${Number(order.total || 0).toFixed(2)}
                         </span>

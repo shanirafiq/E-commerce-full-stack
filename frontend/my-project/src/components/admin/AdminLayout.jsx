@@ -73,10 +73,10 @@ export default function AdminLayout() {
         {/* Logo */}
         <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-pink-500 text-sm font-bold text-white shadow-lg">
-            F
+      E
           </div>
           <span className="text-lg font-semibold text-white" style={{ fontFamily: "Fraunces, serif" }}>
-            Folio Admin
+            E-commerce Store
           </span>
         </div>
 

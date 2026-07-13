@@ -97,9 +97,9 @@ const updatedUser = async (req, res) => {
     }
 
     if (req.file) {
-      const uploaded = saveLocalFile(req.file);
+      const uploaded = await saveLocalFile(req.file, "folio/avatars");
       if (user.avatarPublicId) {
-        deleteLocalFile(user.avatarPublicId);
+        await deleteLocalFile(user.avatarPublicId);
       }
       user.avatar = uploaded.url;
       user.avatarPublicId = uploaded.publicId;
@@ -152,13 +152,13 @@ const deleteUser = async (req, res) => {
     }
 
     if (user.avatarPublicId) {
-      deleteLocalFile(user.avatarPublicId);
+      await deleteLocalFile(user.avatarPublicId);
     }
 
     const products = await Product.find({ userId: id });
     for (const product of products) {
       if (product.productImgPublicId) {
-        deleteLocalFile(product.productImgPublicId);
+        await deleteLocalFile(product.productImgPublicId);
       }
     }
     await Product.deleteMany({ userId: id });

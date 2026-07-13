@@ -18,7 +18,7 @@ const createProduct = async (req, res) => {
 
     let imageData = { url: "", publicId: "" };
     if (req.file) {
-      const uploaded = saveLocalFile(req.file);
+      const uploaded = await saveLocalFile(req.file, "folio/products");
       imageData = { url: uploaded.url, publicId: uploaded.publicId };
     }
 
@@ -189,9 +189,9 @@ const updateProduct = async (req, res) => {
     if (category) updates.category = category;
 
     if (req.file) {
-      const uploaded = saveLocalFile(req.file);
+      const uploaded = await saveLocalFile(req.file, "folio/products");
       if (product.productImgPublicId) {
-        deleteLocalFile(product.productImgPublicId);
+        await deleteLocalFile(product.productImgPublicId);
       }
       updates.productImg = uploaded.url;
       updates.productImgPublicId = uploaded.publicId;
@@ -243,7 +243,7 @@ const deleteProduct = async (req, res) => {
     }
 
     if (product.productImgPublicId) {
-      deleteLocalFile(product.productImgPublicId);
+      await deleteLocalFile(product.productImgPublicId);
     }
 
     await Product.findByIdAndDelete(req.params.id);

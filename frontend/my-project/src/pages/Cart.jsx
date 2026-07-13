@@ -167,14 +167,16 @@ export default function Cart() {
                   <span>${total.toFixed(2)}</span>
                 </div>
 
-                <motion.button
-                  type="button"
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="mt-6 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-pink-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40"
-                >
-                  Checkout
-                </motion.button>
+                <Link to="/checkout">
+                  <motion.button
+                    type="button"
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-6 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-pink-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40"
+                  >
+                    Checkout
+                  </motion.button>
+                </Link>
 
                 <Link
                   to="/products"

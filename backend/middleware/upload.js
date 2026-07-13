@@ -1,16 +1,8 @@
 ﻿const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "..", "uploads"));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e6) + ext;
-    cb(null, uniqueName);
-  },
-});
+// Use memory storage so files can be streamed directly to Cloudinary
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
